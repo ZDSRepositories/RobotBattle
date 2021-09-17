@@ -30,7 +30,11 @@ class Computer():
 
         return value
 
-    def execute(self, command):
+
+    def execute_assembly(self, command):
+        binary_opcodes = ["write", "add", "sub", "subtract", "mul", "multiply",
+                      "div", "divide", "cmp", "compare"]
+        noarg_opcodes = ["halt", "return"]
         if command[0] == ":":
             self.pc += 1
             return
@@ -40,145 +44,162 @@ class Computer():
         math_operation = False
         parsed = command.split(" ")
         opcode = parsed[0]
+        args = [float(self.parse_arg(arg)) for arg in parsed[1:]]
+        """
+        arg1 = float(self.parse_arg(parsed[1]))
+        arg2 = None
+        if opcode in binary_opcodes:
+            arg2 = float(self.parse_arg(parsed[2]))"""
 
         # starting the refactoring
-        """handlers = {
-            "halt": self.halt,
-            "load": self.load,
-            "write": self.write,
-            "jump": self.jump,
-            "jumpz": self.jumpz
-                    }"""
+        handlers = {
+            "halt": self.handle_halt,
+            "load": self.handle_load,
+            "write": self.handle_write,
+            "jump": self.handle_jump,
+            "jumpz": self.handle_jumpz,
+            "jumpnz": self.handle_jumpnz,
+            "jumpn": self.handle_jumpn,
+            "jumpnn": self.handle_jumpnn,
+            "add": self.handle_add,
+            "sub": self.handle_subtract,
+            "subtract": self.handle_subtract,
+            "mul": self.handle_multiply,
+            "multiply": self.handle_multiply,
+            "div": self.handle_divide,
+            "divide": self.handle_divide,
+            "push": self.handle_push,
+            "pop": self.handle_pop,
+            "call": self.handle_call,
+            "return": self.handle_return,
+            "cmp": self.handle_compare,
+            "compare": self.handle_compare,
+            "log": self.handle_log
+        }
 
-        if opcode == "halt":
-            self.running = False
-            return
-
-        elif opcode == "load":
-            value = self.parse_arg(parsed[1])
-            self.accumulator = value
-
-        elif opcode == "write":
-            #store value in location
-            value = self.parse_arg(parsed[1])
-            dest = int(self.parse_arg(parsed[2]))
-            self.data[int(dest)] = value
-
-        elif opcode == "jump":
-            dest = int(self.parse_arg(parsed[1]))
-            self.pc = dest - 1
-
-        elif opcode == "jumpz":
-            dest = int(self.parse_arg(parsed[1]))
-            if self.flags["zero"]:
-                self.pc = dest - 1
-
-        elif opcode == "jumpnz":
-            dest = int(self.parse_arg(parsed[1]))
-            if not self.flags["zero"]:
-                self.pc = dest - 1
-
-        elif opcode == "jumpn":
-            print("JUMP IF NEGATIVE")
-            dest = int(self.parse_arg(parsed[1]))
-            if self.flags["negative"]:
-                self.pc = dest - 1
-
-        elif opcode == "jumpnn":
-            dest = int(self.parse_arg(parsed[1]))
-            if not self.flags["negative"]:
-                self.pc = dest - 1
-
-        elif opcode == "add":
-            math_operation = True
-            term1 = self.parse_arg(parsed[1])
-            term2 = self.parse_arg(parsed[2])
-            self.accumulator = term1 + term2
-
-        elif opcode in ["sub", "subtract"]:
-            math_operation = True
-            minuend = self.parse_arg(parsed[1])
-            subtrahend = self.parse_arg(parsed[2])
-            self.accumulator = minuend - subtrahend
-
-        elif opcode in ["mul", "multiply"]:
-            math_operation = True
-            term1 = self.parse_arg(parsed[1])
-            term2 = self.parse_arg(parsed[2])
-            self.accumulator = term1 * term2
-
-        elif opcode in ["div", "divide"]:
-            math_operation = True
-            dividend = self.parse_arg(parsed[1])
-            divisor = self.parse_arg(parsed[2])
-            self.accumulator = dividend / divisor
-
-        elif opcode == "push":
-            value = self.parse_arg(parsed[1])
-            self.stack.append(value)
-
-        elif opcode == "pop":
-            #value = self.parse_arg(parsed[1])
-            dest = parsed[1]
-            #print(dest)
-            #input()
-            if dest == "a":
-                self.accumulator = self.stack.pop()
-            else:
-                self.data[int(self.parse_arg(dest))] = self.stack.pop()
-
-        elif opcode == "call":
-            addr = self.parse_arg(parsed[1])
-            self.stack.append(self.pc)
-            self.pc = addr
-
-        elif opcode == "return":
-            try:
-                self.pc = self.stack.pop()
-            except IndexError:
-                pass
-
-        elif opcode in ["cmp", "compare"]:
-            minuend = self.parse_arg(parsed[1])
-            subtrahend = self.parse_arg(parsed[2])
-            difference = minuend - subtrahend
-            if difference == 0:
-                self.flags["zero"] = True
-            else:
-                self.flags["zero"] = False
-            if difference < 0:
-                self.flags["negative"] = True
-            else:
-                self.flags["negative"] = False
-
-        elif opcode == "logchar":
-            char = int(self.parse_arg(parsed[1]))
-            print("LOGGING:", chr(char))
-            if chr(char) == "\n":
-                self.log.append("")
-            else:
-                if len(self.log) > 0:
-                    self.log[-1] += (chr(char))
-                else:
-                    self.log.append(chr(char))
-
-
-
-        if math_operation:
-            if self.accumulator == 0:
-                self.flags["zero"] = True
-            else:
-                self.flags["zero"] = False
-
-            if self.accumulator < 0:
-                self.flags["negative"] = True
-            else:
-                self.flags["negative"] = False
-
+        #print(binary_opcodes)
+        #print(opcode)
+        if opcode in binary_opcodes:
+            #print(handlers[opcode])
+            handlers[opcode](args[0], args[1])
+        elif opcode in noarg_opcodes:
+            handlers[opcode]()
+        else:
+            handlers[opcode](args[0])
         self.pc += 1
+
+        return
+
+
+    def update_flags(self):
+        if self.accumulator == 0:
+            self.flags["zero"] = True
+        else:
+            self.flags["zero"] = False
+
+        if self.accumulator < 0:
+            self.flags["negative"] = True
+        else:
+            self.flags["negative"] = False
+
+
+    def handle_halt(self):
+        self.running = False
+        return
+
+    def handle_load(self, value):
+        self.accumulator = value
+
+    def handle_write(self, value, dest):
+        # store value at location
+        self.data[int(dest)] = value
+
+    def handle_jump(self, dest):
+        self.pc = int(dest - 1)
+
+    def handle_jumpz(self, dest):
+        if self.flags["zero"]:
+            self.pc = int(dest - 1)
+
+    def handle_jumpnz(self, dest):
+        if not self.flags["zero"]:
+            self.pc = int(dest - 1)
+
+    def handle_jumpn(self, dest):
+        print("JUMP IF NEGATIVE")
+        if self.flags["negative"]:
+            self.pc = int(dest - 1)
+
+    def handle_jumpnn(self, dest):
+        if not self.flags["negative"]:
+            self.pc = int(dest - 1)
+
+    def handle_add(self, term1, term2):
+        math_operation = True
+        self.accumulator = term1 + term2
+        self.update_flags()
+
+    def handle_subtract(self, minuend, subtrahend):
+        math_operation = True
+        self.accumulator = minuend - subtrahend
+        self.update_flags()
+
+    def handle_multiply(self, term1, term2):
+        math_operation = True
+        self.accumulator = term1 * term2
+        self.update_flags()
+
+    def handle_divide(self, dividend, divisor):
+        math_operation = True
+        self.accumulator = dividend / divisor
+        self.update_flags()
+
+    def handle_push(self, value):
+        self.stack.append(value)
+
+    def handle_pop(self, dest):
+        if dest == "a":
+            self.accumulator = self.stack.pop()
+        else:
+            self.data[int(self.parse_arg(dest))] = self.stack.pop()
+
+    def handle_call(self, addr):
+        self.stack.append(self.pc)
+        self.pc = addr - 1
+
+    def handle_return(self):
+        try:
+            self.pc = self.stack.pop()
+        except IndexError:
+            pass
+
+    def handle_compare(self, minuend, subtrahend):
+        difference = minuend - subtrahend
+        if difference == 0:
+            self.flags["zero"] = True
+        else:
+            self.flags["zero"] = False
+        if difference < 0:
+            self.flags["negative"] = True
+        else:
+            self.flags["negative"] = False
+
+    def handle_log(self, char):
+        #print(type(char))
+        char = chr(int(char))
+        print("LOGGING CHR", ord(char), ":", char)
+        if char == "\n":
+            self.log.append("")
+        else:
+            if len(self.log) > 0:
+                self.log[-1] += char
+            else:
+                self.log.append(char)
+
 
     def execute_next(self):
         if self.pc  >= len(self.code):
             self.running = False
             return
-        self.execute(self.code[self.pc])
+        if self.running:
+            self.execute_assembly(self.code[self.pc])
