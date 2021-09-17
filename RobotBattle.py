@@ -148,7 +148,7 @@ class Bullet():
 
 code = [
     "write 5 0",
-    "write 12 1",
+    "write 5 1",
     "cmp @0 0",
     "jumpz :end",
     "cmp @1 0",
@@ -170,8 +170,9 @@ code = [
     "write 2 6",
     "jump 0",
 ]
-code = ["logchar 65", "logchar 65", "logchar 65", "logchar 10", "logchar 65"]
 """
+#code = ["log 65", "log 65", "log 65", "log 10", "log 65"]
+
 
 c = classes.Computer(code, 10, 0)
 r = Robot(100, 400, 200, 0, 0, 0, c)
